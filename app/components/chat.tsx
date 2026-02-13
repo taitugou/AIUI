@@ -631,8 +631,6 @@ export function ChatActions(props: {
           }}
         />
 
-
-
         {supportsCustomSize(currentModel) && (
           <ChatAction
             onClick={() => setShowSizeSelector(true)}
@@ -1601,7 +1599,8 @@ function _Chat() {
 
   // switch model
   const currentModel = session.mask.modelConfig.model;
-  const currentProviderName = session.mask.modelConfig?.providerName || ServiceProvider.OpenAI;
+  const currentProviderName =
+    session.mask.modelConfig?.providerName || ServiceProvider.OpenAI;
   const allModels = useAllModels();
   const models = useMemo(() => {
     const filteredModels = allModels.filter((m) => m.available);
@@ -1666,9 +1665,8 @@ function _Chat() {
                 bordered
                 title={Locale.Chat.Actions.Model}
                 onClick={() => setShowModelSelector(true)}
-              >
-                {currentModelName}
-              </IconButton>
+                text={currentModelName}
+              />
             </div>
             <div className="window-action-button">
               <IconButton
@@ -1741,7 +1739,8 @@ function _Chat() {
                 const [model, providerName] = getModelProvider(s[0]);
                 chatStore.updateTargetSession(session, (session) => {
                   session.mask.modelConfig.model = model as ModelType;
-                  session.mask.modelConfig.providerName = providerName as ServiceProvider;
+                  session.mask.modelConfig.providerName =
+                    providerName as ServiceProvider;
                   session.mask.syncGlobalConfig = false;
                 });
                 if (providerName == "ByteDance") {
