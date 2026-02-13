@@ -6,7 +6,22 @@ import Locale from "@/app/locales";
 import { useSdStore } from "@/app/store/sd";
 import clsx from "clsx";
 
-export const params = [
+interface ParamItem {
+  name: string;
+  value: string;
+  type: string;
+  placeholder?: string;
+  required?: boolean;
+  default?: string | number;
+  options?: { name: string; value: string }[];
+  min?: number;
+  max?: number;
+  step?: number;
+  sub?: string;
+  support?: string[];
+}
+
+export const params: ParamItem[] = [
   {
     name: Locale.SdPanel.Prompt,
     value: "prompt",
@@ -173,9 +188,10 @@ export function ControlParam(props: {
                   step={item.step || 1}
                   value={props.data[item.value] ?? item.default ?? 0}
                   onChange={(e) => {
-                    const val = item.step && item.step < 1 
-                      ? parseFloat(e.currentTarget.value) 
-                      : parseInt(e.currentTarget.value);
+                    const val =
+                      item.step && item.step < 1
+                        ? parseFloat(e.currentTarget.value)
+                        : parseInt(e.currentTarget.value);
                     props.onChange(item.value, val);
                   }}
                 />
