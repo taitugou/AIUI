@@ -25,6 +25,7 @@ import { createPersistStore } from "../utils/store";
 import { ensure } from "../utils/clone";
 import { DEFAULT_CONFIG } from "./config";
 import { getModelProvider } from "../utils/model";
+import { useAppConfig } from "./config";
 
 let fetchState = 0; // 0 not fetch, 1 fetching, 2 done
 
@@ -266,6 +267,16 @@ export const useAccessStore = createPersistStore(
             const [model, providerName] = getModelProvider(defaultModel);
             DEFAULT_CONFIG.modelConfig.model = model;
             DEFAULT_CONFIG.modelConfig.providerName = providerName as any;
+            const configStore = useAppConfig.getState();
+            if (
+              configStore.modelConfig.model === "gpt-4o-mini" ||
+              !configStore.modelConfig.model
+            ) {
+              configStore.update((config) => {
+                config.modelConfig.model = model;
+                config.modelConfig.providerName = providerName as any;
+              });
+            }
           }
 
           return res;

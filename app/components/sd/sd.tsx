@@ -127,7 +127,7 @@ export function Sd() {
                 chatStyles["chat-body-title"],
               )}
             >
-              <div className={`window-header-main-title`}>Stability AI</div>
+              <div className={`window-header-main-title`}>TTG Image</div>
               <div className="window-header-sub-title">
                 {Locale.Sd.SubTitle(sdImages.length || 0)}
               </div>
@@ -237,27 +237,18 @@ export function Sd() {
                                             label =
                                               Locale.SdPanel.NegativePrompt;
                                             break;
-                                          case "aspect_ratio":
-                                            label = Locale.SdPanel.AspectRatio;
+                                          case "image_size":
+                                            label = Locale.SdPanel.ImageSize;
                                             break;
                                           case "seed":
                                             label = "Seed";
                                             value = value || 0;
                                             break;
-                                          case "output_format":
-                                            label = Locale.SdPanel.OutFormat;
-                                            value = value?.toUpperCase();
+                                          case "num_inference_steps":
+                                            label = Locale.SdPanel.NumInferenceSteps;
                                             break;
-                                          case "style":
-                                            label = Locale.SdPanel.ImageStyle;
-                                            value = params
-                                              .find(
-                                                (item) =>
-                                                  item.value === "style",
-                                              )
-                                              ?.options?.find(
-                                                (item) => item.value === value,
-                                              )?.name;
+                                          case "guidance_scale":
+                                            label = Locale.SdPanel.GuidanceScale;
                                             break;
                                           default:
                                             break;
@@ -312,7 +303,6 @@ export function Sd() {
                                 if (
                                   await showConfirm(Locale.Sd.Danger.Delete)
                                 ) {
-                                  // remove img_data + remove item in list
                                   removeImage(item.img_data).finally(() => {
                                     sdStore.draw = sdImages.filter(
                                       (i: any) => i.id !== item.id,

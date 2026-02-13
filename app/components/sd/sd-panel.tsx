@@ -15,68 +15,42 @@ export const params = [
     required: true,
   },
   {
-    name: Locale.SdPanel.ModelVersion,
-    value: "model",
-    type: "select",
-    default: "sd3-medium",
-    support: ["sd3"],
-    options: [
-      { name: "SD3 Medium", value: "sd3-medium" },
-      { name: "SD3 Large", value: "sd3-large" },
-      { name: "SD3 Large Turbo", value: "sd3-large-turbo" },
-    ],
-  },
-  {
     name: Locale.SdPanel.NegativePrompt,
     value: "negative_prompt",
     type: "textarea",
     placeholder: Locale.SdPanel.PleaseInput(Locale.SdPanel.NegativePrompt),
   },
   {
-    name: Locale.SdPanel.AspectRatio,
-    value: "aspect_ratio",
+    name: Locale.SdPanel.ImageSize,
+    value: "image_size",
     type: "select",
-    default: "1:1",
+    default: "1024x1024",
     options: [
-      { name: "1:1", value: "1:1" },
-      { name: "16:9", value: "16:9" },
-      { name: "21:9", value: "21:9" },
-      { name: "2:3", value: "2:3" },
-      { name: "3:2", value: "3:2" },
-      { name: "4:5", value: "4:5" },
-      { name: "5:4", value: "5:4" },
-      { name: "9:16", value: "9:16" },
-      { name: "9:21", value: "9:21" },
+      { name: "1024x1024 (1:1)", value: "1024x1024" },
+      { name: "960x1280 (3:4)", value: "960x1280" },
+      { name: "768x1024 (3:4)", value: "768x1024" },
+      { name: "720x1440 (1:2)", value: "720x1440" },
+      { name: "720x1280 (9:16)", value: "720x1280" },
     ],
   },
   {
-    name: Locale.SdPanel.ImageStyle,
-    value: "style",
-    type: "select",
-    default: "3d-model",
-    support: ["core"],
-    options: [
-      { name: Locale.SdPanel.Styles.D3Model, value: "3d-model" },
-      { name: Locale.SdPanel.Styles.AnalogFilm, value: "analog-film" },
-      { name: Locale.SdPanel.Styles.Anime, value: "anime" },
-      { name: Locale.SdPanel.Styles.Cinematic, value: "cinematic" },
-      { name: Locale.SdPanel.Styles.ComicBook, value: "comic-book" },
-      { name: Locale.SdPanel.Styles.DigitalArt, value: "digital-art" },
-      { name: Locale.SdPanel.Styles.Enhance, value: "enhance" },
-      { name: Locale.SdPanel.Styles.FantasyArt, value: "fantasy-art" },
-      { name: Locale.SdPanel.Styles.Isometric, value: "isometric" },
-      { name: Locale.SdPanel.Styles.LineArt, value: "line-art" },
-      { name: Locale.SdPanel.Styles.LowPoly, value: "low-poly" },
-      {
-        name: Locale.SdPanel.Styles.ModelingCompound,
-        value: "modeling-compound",
-      },
-      { name: Locale.SdPanel.Styles.NeonPunk, value: "neon-punk" },
-      { name: Locale.SdPanel.Styles.Origami, value: "origami" },
-      { name: Locale.SdPanel.Styles.Photographic, value: "photographic" },
-      { name: Locale.SdPanel.Styles.PixelArt, value: "pixel-art" },
-      { name: Locale.SdPanel.Styles.TileTexture, value: "tile-texture" },
-    ],
+    name: Locale.SdPanel.NumInferenceSteps,
+    value: "num_inference_steps",
+    type: "number",
+    default: 20,
+    min: 1,
+    max: 100,
+    sub: Locale.SdPanel.NumInferenceStepsSub,
+  },
+  {
+    name: Locale.SdPanel.GuidanceScale,
+    value: "guidance_scale",
+    type: "number",
+    default: 7.5,
+    min: 0,
+    max: 20,
+    step: 0.1,
+    sub: Locale.SdPanel.GuidanceScaleSub,
   },
   {
     name: "Seed",
@@ -84,22 +58,12 @@ export const params = [
     type: "number",
     default: 0,
     min: 0,
-    max: 4294967294,
-  },
-  {
-    name: Locale.SdPanel.OutFormat,
-    value: "output_format",
-    type: "select",
-    default: "png",
-    options: [
-      { name: "PNG", value: "png" },
-      { name: "JPEG", value: "jpeg" },
-      { name: "WebP", value: "webp" },
-    ],
+    max: 9999999999,
+    sub: Locale.SdPanel.SeedSub,
   },
 ];
 
-const sdCommonParams = (model: string, data: any) => {
+const kolorsCommonParams = (model: string, data: any) => {
   return params.filter((item) => {
     return !(item.support && !item.support.includes(model));
   });
@@ -107,25 +71,9 @@ const sdCommonParams = (model: string, data: any) => {
 
 export const models = [
   {
-    name: "Stable Image Ultra",
-    value: "ultra",
-    params: (data: any) => sdCommonParams("ultra", data),
-  },
-  {
-    name: "Stable Image Core",
-    value: "core",
-    params: (data: any) => sdCommonParams("core", data),
-  },
-  {
-    name: "Stable Diffusion 3",
-    value: "sd3",
-    params: (data: any) => {
-      return sdCommonParams("sd3", data).filter((item) => {
-        return !(
-          data.model === "sd3-large-turbo" && item.value == "negative_prompt"
-        );
-      });
-    },
+    name: "TTG Image",
+    value: "Kwai-Kolors/Kolors",
+    params: (data: any) => kolorsCommonParams("kolors", data),
   },
 ];
 
@@ -222,9 +170,13 @@ export function ControlParam(props: {
                   type="number"
                   min={item.min}
                   max={item.max}
-                  value={props.data[item.value] || 0}
+                  step={item.step || 1}
+                  value={props.data[item.value] ?? item.default ?? 0}
                   onChange={(e) => {
-                    props.onChange(item.value, parseInt(e.currentTarget.value));
+                    const val = item.step && item.step < 1 
+                      ? parseFloat(e.currentTarget.value) 
+                      : parseInt(e.currentTarget.value);
+                    props.onChange(item.value, val);
                   }}
                 />
               </ControlParamItem>
@@ -263,10 +215,9 @@ export const getModelParamBasicData = (
   const newParams: any = {};
   columns.forEach((item: any) => {
     if (clearText && ["text", "textarea", "number"].includes(item.type)) {
-      newParams[item.value] = item.default || "";
+      newParams[item.value] = item.default ?? "";
     } else {
-      // @ts-ignore
-      newParams[item.value] = data[item.value] || item.default || "";
+      newParams[item.value] = data[item.value] ?? item.default ?? "";
     }
   });
   return newParams;

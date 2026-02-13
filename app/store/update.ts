@@ -105,7 +105,7 @@ export const useUpdateStore = createPersistStore(
                       if (version === remoteId) {
                         // Show a notification using Tauri
                         window.__TAURI__?.notification.sendNotification({
-                          title: "NextChat",
+                          title: "TTG AIUI",
                           body: `${Locale.Settings.Update.IsLatest}`,
                           icon: `${ChatGptIcon.src}`,
                           sound: "Default",
@@ -113,9 +113,8 @@ export const useUpdateStore = createPersistStore(
                       } else {
                         const updateMessage =
                           Locale.Settings.Update.FoundUpdate(`${remoteId}`);
-                        // Show a notification for the new version using Tauri
                         window.__TAURI__?.notification.sendNotification({
-                          title: "NextChat",
+                          title: "TTG AIUI",
                           body: updateMessage,
                           icon: `${ChatGptIcon.src}`,
                           sound: "Default",

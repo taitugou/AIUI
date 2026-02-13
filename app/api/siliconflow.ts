@@ -41,7 +41,6 @@ export async function handle(
 async function request(req: NextRequest) {
   const controller = new AbortController();
 
-  // alibaba use base url or just remove the path
   let path = `${req.nextUrl.pathname}`.replaceAll(ApiPath.SiliconFlow, "");
 
   let baseUrl = serverConfig.siliconFlowUrl || SILICONFLOW_BASE_URL;
@@ -65,10 +64,16 @@ async function request(req: NextRequest) {
   );
 
   const fetchUrl = `${baseUrl}${path}`;
+  
+  let authHeader = req.headers.get("Authorization") ?? "";
+  if (!authHeader && serverConfig.siliconFlowApiKey) {
+    authHeader = `Bearer ${serverConfig.siliconFlowApiKey}`;
+  }
+  
   const fetchOptions: RequestInit = {
     headers: {
       "Content-Type": "application/json",
-      Authorization: req.headers.get("Authorization") ?? "",
+      Authorization: authHeader,
     },
     method: req.method,
     body: req.body,
@@ -79,7 +84,10 @@ async function request(req: NextRequest) {
   };
 
   // #1815 try to refuse some request to some models
-  if (serverConfig.customModels && req.body) {
+  // Skip model check for image generation requests
+  const isImageGeneration = path.includes("/images/generations");
+  
+  if (serverConfig.customModels && req.body && !isImageGeneration) {
     try {
       const clonedBody = await req.text();
       fetchOptions.body = clonedBody;

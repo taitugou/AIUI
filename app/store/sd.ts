@@ -1,8 +1,9 @@
 import {
-  Stability,
+  SiliconFlow,
   StoreKey,
   ACCESS_CODE_PREFIX,
   ApiPath,
+  SILICONFLOW_BASE_URL,
 } from "@/app/constant";
 import { getBearerToken } from "@/app/client/api";
 import { createPersistStore } from "@/app/utils/store";
@@ -10,6 +11,7 @@ import { nanoid } from "nanoid";
 import { uploadImage, base64Image2Blob } from "@/app/utils/chat";
 import { models, getModelParamBasicData } from "@/app/components/sd/sd-panel";
 import { useAccessStore } from "./access";
+import { getClientConfig } from "@/app/config/client";
 
 const defaultModel = {
   name: models[0].name,
@@ -59,52 +61,106 @@ export const useSdStore = createPersistStore<
         data = { ...data, id: nanoid(), status: "running" };
         set({ draw: [data, ..._get().draw] });
         this.getNextId();
-        this.stabilityRequestCall(data);
+        this.siliconFlowRequestCall(data);
         okCall?.();
       },
-      stabilityRequestCall(data: any) {
+      async siliconFlowRequestCall(data: any) {
         const accessStore = useAccessStore.getState();
-        let prefix: string = ApiPath.Stability as string;
+        const isApp = !!getClientConfig()?.isApp;
+
+        let baseUrl = "";
         let bearerToken = "";
+
         if (accessStore.useCustomConfig) {
-          prefix = accessStore.stabilityUrl || (ApiPath.Stability as string);
-          bearerToken = getBearerToken(accessStore.stabilityApiKey);
+          baseUrl = accessStore.siliconflowUrl || SILICONFLOW_BASE_URL;
+          bearerToken = getBearerToken(accessStore.siliconflowApiKey);
+        } else {
+          baseUrl = isApp ? SILICONFLOW_BASE_URL : ApiPath.SiliconFlow;
         }
+
         if (!bearerToken && accessStore.enabledAccessControl()) {
           bearerToken = getBearerToken(
             ACCESS_CODE_PREFIX + accessStore.accessCode,
           );
         }
-        const headers = {
-          Accept: "application/json",
-          Authorization: bearerToken,
-        };
-        const path = `${prefix}/${Stability.GeneratePath}/${data.model}`;
-        const formData = new FormData();
-        for (let paramsKey in data.params) {
-          formData.append(paramsKey, data.params[paramsKey]);
+
+        if (!baseUrl.startsWith("http") && !baseUrl.startsWith(ApiPath.SiliconFlow)) {
+          baseUrl = `https://${baseUrl}`;
         }
-        fetch(path, {
-          method: "POST",
-          headers,
-          body: formData,
-        })
-          .then((response) => response.json())
-          .then((resData) => {
-            if (resData.errors && resData.errors.length > 0) {
+
+        if (baseUrl.endsWith("/")) {
+          baseUrl = baseUrl.slice(0, -1);
+        }
+
+        const headers: Record<string, string> = {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        };
+
+        if (bearerToken) {
+          headers["Authorization"] = bearerToken;
+        }
+
+        const url = `${baseUrl}/${SiliconFlow.ImagePath}`;
+
+        const requestBody: Record<string, any> = {
+          model: data.model,
+          prompt: data.params.prompt,
+          image_size: data.params.image_size || "1024x1024",
+          batch_size: 1,
+        };
+
+        if (data.params.negative_prompt) {
+          requestBody.negative_prompt = data.params.negative_prompt;
+        }
+        if (data.params.seed && data.params.seed > 0) {
+          requestBody.seed = data.params.seed;
+        }
+        if (data.params.num_inference_steps) {
+          requestBody.num_inference_steps = data.params.num_inference_steps;
+        }
+        if (data.params.guidance_scale !== undefined) {
+          requestBody.guidance_scale = data.params.guidance_scale;
+        }
+
+        console.log("[SiliconFlow Image] Request:", { url, requestBody });
+
+        try {
+          const response = await fetch(url, {
+            method: "POST",
+            headers,
+            body: JSON.stringify(requestBody),
+          });
+
+          const resData = await response.json();
+          console.log("[SiliconFlow Image] Response:", resData);
+
+          if (!response.ok || resData.error) {
+            this.updateDraw({
+              ...data,
+              status: "error",
+              error: resData.message || resData.error || "Request failed",
+            });
+            this.getNextId();
+            return;
+          }
+
+          if (resData.images && resData.images.length > 0) {
+            const imageData = resData.images[0];
+
+            if (imageData.url) {
               this.updateDraw({
                 ...data,
-                status: "error",
-                error: resData.errors[0],
+                status: "success",
+                img_data: imageData.url,
               });
               this.getNextId();
-              return;
-            }
-            const self = this;
-            if (resData.finish_reason === "SUCCESS") {
-              uploadImage(base64Image2Blob(resData.image, "image/png"))
+            } else if (imageData.b64_json) {
+              const imageBase64 = imageData.b64_json;
+              const self = this;
+              uploadImage(base64Image2Blob(imageBase64, "image/png"))
                 .then((img_data) => {
-                  console.debug("uploadImage success", img_data, self);
+                  console.debug("uploadImage success", img_data);
                   self.updateDraw({
                     ...data,
                     status: "success",
@@ -118,21 +174,31 @@ export const useSdStore = createPersistStore<
                     status: "error",
                     error: JSON.stringify(e),
                   });
+                })
+                .finally(() => {
+                  self.getNextId();
                 });
             } else {
-              self.updateDraw({
+              this.updateDraw({
                 ...data,
                 status: "error",
-                error: JSON.stringify(resData),
+                error: "No image data in response",
               });
+              this.getNextId();
             }
+          } else {
+            this.updateDraw({
+              ...data,
+              status: "error",
+              error: "No images in response",
+            });
             this.getNextId();
-          })
-          .catch((error) => {
-            this.updateDraw({ ...data, status: "error", error: error.message });
-            console.error("Error:", error);
-            this.getNextId();
-          });
+          }
+        } catch (error: any) {
+          console.error("[SiliconFlow Image] Error:", error);
+          this.updateDraw({ ...data, status: "error", error: error.message });
+          this.getNextId();
+        }
       },
       updateDraw(_draw: any) {
         const draw = _get().draw || [];
@@ -158,6 +224,6 @@ export const useSdStore = createPersistStore<
   },
   {
     name: StoreKey.SdList,
-    version: 1.0,
+    version: 1.1,
   },
 );

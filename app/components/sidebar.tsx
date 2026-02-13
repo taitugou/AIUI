@@ -12,6 +12,7 @@ import MaskIcon from "../icons/mask.svg";
 import McpIcon from "../icons/mcp.svg";
 import DragIcon from "../icons/drag.svg";
 import DiscoveryIcon from "../icons/discovery.svg";
+import SdIcon from "../icons/sd.svg";
 
 import Locale from "../locales";
 
@@ -35,7 +36,6 @@ import { isMcpEnabled } from "../mcp/actions";
 
 const DISCOVERY = [
   { name: Locale.Plugin.Name, path: Path.Plugins },
-  { name: "Stable Diffusion", path: Path.Sd },
   { name: Locale.SearchChat.Page.Title, path: Path.SearchChat },
 ];
 
@@ -250,7 +250,7 @@ export function SideBar(props: { className?: string }) {
       {...props}
     >
       <SideBarHeader
-        title="NextChat"
+        title="TTG AIUI"
         subTitle="Build your own AI assistant."
         logo={<ChatGptIcon />}
         shouldNarrow={shouldNarrow}
@@ -269,17 +269,15 @@ export function SideBar(props: { className?: string }) {
             }}
             shadow
           />
-          {mcpEnabled && (
-            <IconButton
-              icon={<McpIcon />}
-              text={shouldNarrow ? undefined : Locale.Mcp.Name}
-              className={styles["sidebar-bar-button"]}
-              onClick={() => {
-                navigate(Path.McpMarket, { state: { fromHome: true } });
-              }}
-              shadow
-            />
-          )}
+          <IconButton
+            icon={<SdIcon />}
+            text={shouldNarrow ? undefined : "AI画图"}
+            className={styles["sidebar-bar-button"]}
+            onClick={() => {
+              navigate(Path.Sd, { state: { fromHome: true } });
+            }}
+            shadow
+          />
           <IconButton
             icon={<DiscoveryIcon />}
             text={shouldNarrow ? undefined : Locale.Discovery.Name}
@@ -297,6 +295,9 @@ export function SideBar(props: { className?: string }) {
                   value: item.path,
                 };
               }),
+              ...(mcpEnabled
+                ? [{ title: Locale.Mcp.Name, value: Path.McpMarket }]
+                : []),
             ]}
             onClose={() => setshowDiscoverySelector(false)}
             onSelection={(s) => {
