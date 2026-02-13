@@ -51,5 +51,5 @@ export async function executeRequest(
   client: Client,
   request: McpRequestMessage,
 ): Promise<unknown> {
-  return client.request(request, z.record(z.any()));
+  return client.request(request, z.object({}) as never);
 }
