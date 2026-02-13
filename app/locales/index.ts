@@ -11,19 +11,23 @@ const ALL_LANGS = {
   cn,
 };
 
-export type Lang = keyof typeof ALL_LANGS;
+export type Lang = keyof typeof ALL_LANGS | "en" | "tw";
 
 export const AllLangs = Object.keys(ALL_LANGS) as Lang[];
 
 export const ALL_LANG_OPTIONS: Record<Lang, string> = {
   cn: "简体中文",
+  en: "English",
+  tw: "繁體中文",
 };
 
 const LANG_KEY = "lang";
 const DEFAULT_LANG = "cn";
 
 const fallbackLang = cn;
-const targetLang = ALL_LANGS[getLang()] as LocaleType;
+const targetLang = (ALL_LANGS as Record<string, LocaleType>)[
+  getLang()
+] as LocaleType;
 
 merge(fallbackLang, targetLang);
 
@@ -37,7 +41,7 @@ function setItem(key: string, value: string) {
   localStorage.setItem(key, value);
 }
 
-function getLanguage() {
+function getLanguage(): Lang {
   return DEFAULT_LANG;
 }
 
@@ -63,6 +67,8 @@ export function getISOLang() {
 const DEFAULT_STT_LANG = "zh-CN";
 export const STT_LANG_MAP: Record<Lang, string> = {
   cn: "zh-CN",
+  en: "en-US",
+  tw: "zh-TW",
 };
 
 export function getSTTLang(): string {
